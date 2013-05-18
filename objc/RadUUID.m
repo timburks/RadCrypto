@@ -21,8 +21,9 @@
 @implementation RadUUID 
 
 - (RadUUID *) init {
-   [super init];
-   uuid_generate(uu);
+   if (self = [super init]) {
+       uuid_generate(uu);
+   }
    return self;
 }
 

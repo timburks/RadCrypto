@@ -14,7 +14,7 @@
               (set gnustep_flags ((NSString stringWithShellCommand:"gnustep-config --objc-flags") chomp))
               (set gnustep_libs ((NSString stringWithShellCommand:"gnustep-config --base-libs") chomp))
               (set @cflags "-g -fobjc-nonfragile-abi -fobjc-arc -DLINUX -I/usr/local/include #{gnustep_flags} -DRadCrypto_OpenSSL")
-              (set @ldflags "#{gnustep_libs} -lNu -lcrypto"))
+              (set @ldflags "#{gnustep_libs} -lNu -lcrypto -luuid"))
       (else nil))
 
 

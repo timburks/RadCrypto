@@ -21,6 +21,7 @@
 #import <CommonCrypto/CommonHMAC.h>
 #import <CommonCrypto/CommonDigest.h>
 #import <CommonCrypto/CommonCryptor.h>
+#import <CommonCrypto/CommonKeyDerivation.h>
 #import <Security/Security.h>
 
 @implementation NSData (RadCommonCrypto)
@@ -109,58 +110,62 @@
     return [NSData dataWithBytes:result length:CC_SHA512_DIGEST_LENGTH];
 }
 
-- (NSMutableData*) aesEncryptWithKey:(NSString *) key
+const NSUInteger kPBKDFRounds = 10000;  // ~80ms on an iPhone 4
+
+// Replace this with a 10,000 hash calls if you don't have CCKeyDerivationPBKDF
++ (NSData *) AESKeyForPassword:(NSString *)password 
+                          salt:(NSString *)salt {
+  NSMutableData *derivedKey = [NSMutableData dataWithLength:kCCKeySizeAES256];
+  int result = CCKeyDerivationPBKDF(kCCPBKDF2,            // algorithm
+                                    password.UTF8String,  // password
+                                    password.length,      // passwordLength
+                                    salt.UTF8String,           // salt
+                                    salt.length,          // saltLen
+                                    kCCPRFHmacAlgSHA1,    // PRF
+                                    kPBKDFRounds,         // rounds
+                                    derivedKey.mutableBytes, // derivedKey
+                                    derivedKey.length); // derivedKeyLen
+  // Do not log password here
+  NSAssert(result == kCCSuccess, @"Unable to create AES key for password: %d", result);
+  return derivedKey;
+}
+
+- (NSData *) aesEncryptedDataWithPassword:(NSString *) password salt:(NSString *) salt
 {
-    char keyPtr[kCCKeySizeAES256+1];
-    bzero(keyPtr, sizeof(keyPtr));
-    
-    [key getCString:keyPtr maxLength:sizeof(keyPtr) encoding:NSUTF8StringEncoding];
     size_t numBytesEncrypted = 0;
-    
-    NSUInteger dataLength = [self length];
-    
+    NSUInteger dataLength = [self length];    
     size_t bufferSize = dataLength + kCCBlockSizeAES128;
-    void *buffer = malloc(bufferSize);
-        
+    void *buffer = malloc(bufferSize);        
+    NSData *key = [isa AESKeyForPassword:password salt:salt];
     CCCryptorStatus result = CCCrypt(kCCEncrypt, kCCAlgorithmAES128, kCCOptionPKCS7Padding,
-                                     keyPtr, kCCKeySizeAES256,
+                                     [key bytes], [key length],
                                      NULL,
                                      [self bytes], [self length],
                                      buffer, bufferSize,
-                                     &numBytesEncrypted );
-    
-    NSMutableData *output = [NSMutableData dataWithBytesNoCopy:buffer length:numBytesEncrypted];
-    if( result == kCCSuccess ) {
-        return output;
+                                     &numBytesEncrypted);  
+    if (result == kCCSuccess) {
+	return [NSData dataWithBytesNoCopy:buffer length:numBytesEncrypted];
     }
-    return NULL;
+    return nil;
 }
 
-- (NSMutableData*) aesDecryptWithKey:(NSString *) key 
+- (NSData *) aesDecryptedDataWithPassword:(NSString *) password salt:(NSString *) salt
 {
-    char  keyPtr[kCCKeySizeAES256+1];
-    bzero( keyPtr, sizeof(keyPtr) );
-    
-    [key getCString: keyPtr maxLength: sizeof(keyPtr) encoding:NSUTF8StringEncoding];
-    
-    size_t numBytesEncrypted = 0;
-    
-    NSUInteger dataLength = [self length];
-    
+    size_t numBytesDecrypted = 0;
+    NSUInteger dataLength = [self length];    
     size_t bufferSize = dataLength + kCCBlockSizeAES128;
-    void *buffer_decrypt = malloc(bufferSize);
+    void *buffer = malloc(bufferSize);
+    NSData *key = [isa AESKeyForPassword:password salt:salt];
     CCCryptorStatus result = CCCrypt(kCCDecrypt, kCCAlgorithmAES128, kCCOptionPKCS7Padding,
-                                     keyPtr, kCCKeySizeAES256,
+                                     [key bytes], [key length],
                                      NULL,
                                      [self bytes], [self length],
-                                     buffer_decrypt, bufferSize,
-                                     &numBytesEncrypted );
-    
-    NSMutableData *output_decrypt = [NSMutableData dataWithBytesNoCopy:buffer_decrypt length:numBytesEncrypted];
-    if( result == kCCSuccess ) {
-        return output_decrypt;
+                                     buffer, bufferSize,
+                                     &numBytesDecrypted);    
+    if (result == kCCSuccess) {
+    	return [NSData dataWithBytesNoCopy:buffer length:numBytesDecrypted];
     }
-    return NULL;
+    return nil;
 }
 
 @end

@@ -1,7 +1,7 @@
 ;; test_uuid.nu
 ;;  tests for the Nu UUID wrapper.
 ;;
-;;  Copyright (c) 2008 Tim Burks, Neon Design Technology, Inc.
+;;  Copyright (c) 2008 Tim Burks, Radtastical Inc.
 
 (load "RadCrypto")
 

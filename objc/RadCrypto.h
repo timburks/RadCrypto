@@ -30,6 +30,6 @@
 - (NSData *) hmacSha256DataWithKey:(NSData *) key;
 - (NSData *) hmacSha384DataWithKey:(NSData *) key;
 - (NSData *) hmacSha512DataWithKey:(NSData *) key;
-- (NSMutableData*) aesEncryptWithKey:(NSString *) key;
-- (NSMutableData*) aesDecryptWithKey:(NSString *) key;
+- (NSData *) aesEncryptedDataWithPassword:(NSString *) password salt:(NSString *) salt;
+- (NSData *) aesDecryptedDataWithPassword:(NSString *) password salt:(NSString *) salt;
 @end

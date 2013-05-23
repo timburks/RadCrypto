@@ -1,0 +1,29 @@
+int
+counter_encrypt_or_decrypt (EVP_CIPHER_CTX * ctx, char *pt, char *ct, int len,
+			    unsigned char *counter)
+{
+  int i, j, where = 0, num, bl = EVP_CIPHER_CTX_block_size (ctx);
+  char encr_ctrs[len + bl];	/* Encrypted counters. */
+
+  if (EVP_CIPHER_CTX_mode (ctx) != EVP_CIPH_ECB_MODE)
+    return -1;
+/* <= is correct, so that we handle any possible non-aligned data. */
+  for (i = 0; i <= len / bl; i++)
+    {
+/* Encrypt the current counter. */
+      EVP_EncryptUpdate (ctx, &encr_ctrs[where], &num, counter, bl);
+      where += num;
+/* Increment the counter. Remember it's an array of single characters */
+      for (j = 0; j < bl / sizeof (char); j++)
+	{
+	  if (++counter[j])
+	    break;
+	}
+    }
+/* XOR the key stream with the first buffer, placing the results in the
+* second buffer.
+*/
+  for (i = 0; i < len; i++)
+    ct[i] = pt[i] ^ encr_ctrs[i];
+  return 1;			/* Success. */
+}

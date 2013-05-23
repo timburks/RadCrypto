@@ -1,0 +1,24 @@
+new_session_cb(  )
+{
+  acquire a lock for the file named according to the session id
+  open file named according to session id
+  encrypt and write the SSL_SESSION object to the file
+  release the lock
+}
+
+remove_session_cb(  )
+{
+  acquire a lock for the file named according to the session id
+  remove the file named according to the session id
+  release the lock
+}
+
+get_session_cb(  )
+{
+  acquire a lock for the file named according to the session id in the 2nd arg
+  read and decrypt contents of file and create a new SSL_SESSION object
+  release the lock
+  set the integer referenced by the fourth parameter to 0
+  return the new session object
+}
+

@@ -1,0 +1,16 @@
+from M2Crypto import EVP
+
+def encrypt(password, data, alg):
+    cipher = EVP.Cipher(alg, password, None, 1, 1, 'sha1')
+    cipher.update(data)
+    return cipher.final( )
+
+def decrypt(password, data, alg):
+    cipher = EVP.Cipher(alg, password, None, 0, 1, 'sha1')
+    cipher.update(data)
+    return cipher.final( )
+
+password = 'any password will do'
+plaintext = 'Hello, world!'
+ciphertext = encrypt(password, plaintext, 'bf-cbc')
+print 'Decrypted message text: %s' % decrypt(password, ciphertext, 'bf-cbc')

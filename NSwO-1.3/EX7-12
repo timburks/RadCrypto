@@ -1,0 +1,54 @@
+unsigned char *
+base64_decode (unsigned char *bbuf, unsigned int *len)
+{
+  unsigned char *ret;
+  unsigned int bin_len;
+
+/* integer divide by 4 then multiply by 3, its binary so no NULL */
+  bin_len = (((strlen (bbuf) + 3) / 4) * 3);
+  ret = (unsigned char *) malloc (bin_len);
+  *len = EVP_DecodeBlock (ret, bbuf, strlen (bbuf));
+  return ret;
+}
+
+static unsigned char *
+decrypt_history (unsigned char *ctext, int len)
+{
+  EVP_CIPHER_CTX ctx;
+  unsigned int tlen, tlen2;
+  unsigned char *res = (unsigned char *) malloc (len + 1);
+
+  EVP_DecryptInit (&ctx, EVP_bf_cbc (), bf_key, iv);
+  EVP_DecryptUpdate (&ctx, res, &tlen, ctext, len);
+  EVP_DecryptFinal (&ctx, &res[tlen], &tlen2);
+  res[tlen + tlen2] = 0;
+  return res;
+}
+
+unsigned char *
+decrypt_and_auth (unsigned char *b64_hist, unsigned char *b64_mac)
+{
+  unsigned char *ctext, *mac1, *res, mac2[EVP_MAX_MD_SIZE];
+  unsigned int mac1len, mac2len, ctextlen;
+
+  if (!(ctext = base64_decode (b64_hist, &ctextlen)))
+    return NULL;
+  if (!(mac1 = base64_decode (b64_mac, &mac1len)))
+    {
+      free (ctext);
+      return NULL;
+    }
+  res = decrypt_history (ctext, ctextlen);
+  HMAC (EVP_sha1 (), mac_key, MAC_KEY_LEN, res, strlen (hist), mac2,
+	&mac2len);
+  if (binary_cmp (mac1, mac1len, mac2, mac2len))
+    {
+      free (res);
+      res = NULL;
+    }
+
+  free (macl);
+  free (ctext);
+
+  return res;
+}

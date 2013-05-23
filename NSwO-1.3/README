@@ -1,0 +1,11 @@
+These text files are the contents of each example from Network Security
+with OpenSSL. Each example has had all known errata corrected as per the
+list on www.opensslbook.com. If there are any questions, concerns, or
+new errata to report, please email authors@opensslbook.com.
+
+In addition to the contents of each example, the 'ssl' subdirectory contains
+working code from Chapter 5. The examples from the book are properly
+named and a *nix makefile is provided for ease of use. NOTE: the makefile
+WILL REQUIRE MANUAL EDITING to fill in some important details. More info
+on this can be found in that subdir.
+

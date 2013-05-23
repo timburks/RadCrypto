@@ -1,0 +1,17 @@
+/* Create a read/write BIO */
+bio = BIO_new(BIO_s_mem( ));
+
+/* Create a read-only BIO using an allocated buffer */
+buffer = malloc(4096);
+bio = BIO_new_mem_buf(buffer, 4096);
+
+/* Create a read-only BIO using a C-style string */
+bio = BIO_new_mem_buf("This is a read-only buffer.", -1);
+
+/* Get a pointer to a memory BIO's memory segment */
+BIO_get_mem_ptr(bio, &buffer);
+
+/* Prevent a memory BIO from destroying its memory segment when it is destroyed
+ */
+BIO_set_close(bio, BIO_NOCLOSE);
+

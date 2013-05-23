@@ -1,0 +1,37 @@
+#include <openssl/evp.h>
+
+/* Return the number of bytes actually written */
+int
+incremental_encrypt (EVP_CIPHER_CTX * ctx, char *data, int inl)
+{
+  char *buf;
+  int ol;
+  int bl = EVP_CIPHER_CTX_block_size (ctx);
+
+/* Up to the block size - 1 chars can be buffered up. Add that to the length
+* of the input, and then we can easily determine the maximum number of
+* blocks output will take by integer divison with the block size.
+*/
+  buf = (char *) malloc ((inl + bl - 1) / bl * bl);
+  EVP_EncryptUpdate (ctx, buf, &ol, data, inl);
+  if (ol)
+    incremental_send (buf, ol);
+/* incremental_send must copy if it wants to store. */
+  free (buf);
+  return ol;
+}
+
+/* Also returns the number of bytes written. */
+int
+incremental_finish (EVP_CIPHER_CTX * ctx)
+{
+  char *buf;
+  int ol;
+
+  buf = (char *) malloc (EVP_CIPHER_CTX_block_size (ctx));
+  EVP_EncryptFinal (ctx, buf, &ol);
+  if (ol)
+    incremental_send (buf, ol);
+  free (buf);
+  return ol;
+}

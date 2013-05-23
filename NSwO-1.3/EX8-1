@@ -1,0 +1,12 @@
+ek = (unsigned char **) malloc (sizeof (unsigned char *) * npubk);
+ekl = (int *) malloc (npubk);
+pubk = (EVP_PKEY **) malloc (sizeof (EVP_PKEY *) * npubk);
+
+for (i = 0; i < npubk; i++)
+  {
+    pubk[i] = EVP_PKEY_new ();
+    EVP_PKEY_set1_RSA (pubk[i], rsakey[i]);
+    ek[i] = (unsigned char *) malloc (EVP_PKEY_size (pubk[i]));
+  }
+
+EVP_SealInit (ctx, type, ek, ekl, iv, pubk, npubk);

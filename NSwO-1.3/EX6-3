@@ -1,0 +1,24 @@
+#include <openssl/evp.h>
+
+char *
+encrypt_example (EVP_CIPHER_CTX * ctx, char *data, int inl, int *rb)
+{
+  char *ret;
+  int i, tmp, ol;
+
+  ol = 0;
+  ret = (char *) malloc (inl + EVP_CIPHER_CTX_block_size (ctx));
+  for (i = 0; i < inl / 100; i++)
+    {
+      EVP_EncryptUpdate (ctx, &ret[ol], &tmp, &data[ol], 100);
+      ol += tmp;
+    }
+  if (inl % 100)
+    {
+      EVP_EncryptUpdate (ctx, &ret[ol], &tmp, &data[ol], inl % 100);
+      ol += tmp;
+    }
+  EVP_EncryptFinal (ctx, &ret[ol], &tmp);
+  *rb = ol + tmp;
+  return ret;
+}

@@ -1,0 +1,27 @@
+#ifndef XCBC_MAC_H__
+#define XCBC_MAC_H__
+#include <openssl/evp.h>
+#include <stdlib.h>
+
+#define XCBC_MAX_BYTES 32
+
+typedef struct XCMAC_CTX_st
+{
+  EVP_CIPHER_CTX cctx;
+  char dk1[XCBC_MAX_BYTES];
+  char dk2[XCBC_MAX_BYTES];
+  char dk3[XCBC_MAX_BYTES];
+  char cbcstate[XCBC_MAX_BYTES];
+  char workspace[XCBC_MAX_BYTES];
+  short worklen;
+  short started;
+}
+XCMAC_CTX;
+
+int XCMAC_Init (XCMAC_CTX * mctx, EVP_CIPHER * c, const unsigned char *k);
+int XCMAC_Update (XCMAC_CTX * mctx, const char *data, int len);
+int XCMAC_Final (XCMAC_CTX * mctx, unsigned char *out, int *outl);
+int XCMAC (EVP_CIPHER * c, const char *key, unsigned char *str, int sz,
+	   unsigned char *out, int *outlen);
+
+#endif

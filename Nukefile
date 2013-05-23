@@ -7,7 +7,7 @@
 (case SYSTEM
       ("Darwin"
                (set @arch (list "x86_64"))
-               (set @cflags "-g -Wno-deprecated-declarations -std=gnu99 -DDARWIN -DRadCrypto_OpenSSL")
+               (set @cflags "-g -Wno-deprecated-declarations -std=gnu99 -DDARWIN -DRadCrypto_CommonCrypto")
                (set @ldflags "-framework Foundation -framework Nu -lcrypto -lssl"))
       ("Linux"
               (set @arch (list "x86_64"))

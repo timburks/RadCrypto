@@ -1,0 +1,21 @@
+int
+seed_prng (int bytes)
+{
+  int error;
+  char *buf;
+  prngctx_t ctx;
+
+  egads_init (&ctx, NULL, NULL, &error);
+  if (error)
+    return 0;
+
+  buf = (char *) malloc (bytes);
+  egads_entropy (&ctx, buf, bytes, &error);
+
+  if (!error)
+    RAND_seed (buf, bytes);
+
+  free (buf);
+  egads_destroy (&ctx);
+  return (!error);
+}

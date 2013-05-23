@@ -1,0 +1,15 @@
+ssl = SSL_new(ctx)
+... setup underlying communications layer for ssl ...
+... connect to host:port ...
+if (saved session for host:port in cache)
+  SSL_set_session(ssl, saved session)
+  SSL_SESSION_free(saved session)
+SSL_connect(ssl)
+call post_connection_check(ssl, host) and check return value
+... normal application code here ...
+saved session = SSL_get1_session(ssl)
+if (saved session != NULL)
+  enter saved session into cache under host:port
+SSL_shutdown(ssl)
+SSL_free(ssl)
+

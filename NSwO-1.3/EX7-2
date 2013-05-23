@@ -1,0 +1,8 @@
+void
+print_hex (unsigned char *bs, unsigned int n)
+{
+  int i;
+
+  for (i = 0; i < n; i++)
+    printf ("%02x", bs[i]);
+}

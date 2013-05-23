@@ -1,0 +1,11 @@
+BIGNUM static_bn, *dynamic_bn;
+
+/* Initialize a statically allocated BIGNUM */
+BN_init (&static_bn);
+
+/* Allocate an initialize a new BIGNUM */
+dynamic_bn = BN_new ();
+
+/* Destroy the two BIGNUMs that we just created */
+BN_free (dynamic_bn);
+BN_free (&static_bn);

@@ -1,0 +1,12 @@
+/* assume ssl is connected and error free up to here */
+set_blocking(ssl); /* this is unnecessary if it is already blocking */
+SSL_renegotiate(ssl);
+SSL_do_handshake(ssl);
+if (ssl->state != SSL_ST_OK)
+    int_error("Failed to send renegotiation request");
+ssl->state |= SSL_ST_ACCEPT;
+SSL_do_handshake(ssl);
+if (ssl->state != SSL_ST_OK)
+    int_error("Failed to complete renegotiation");
+/* our renegotiation is complete */
+

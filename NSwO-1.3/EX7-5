@@ -1,0 +1,27 @@
+/* Return 0 if equal, -1 if unequal */
+int
+binary_cmp (unsigned char *s1, unsigned int len1,
+	    unsigned char *s2, unsigned int len2)
+{
+  int i, c, x;
+
+  if (len1 != len2)
+    return -1;
+
+  c = len1 / sizeof (x);
+  for (i = 0; i < c; i++)
+    {
+      if (*(unsigned long *) (s1 + (i * sizeof (x))) !=
+	  *(unsigned long *) (s2 + (i * sizeof (x))))
+	{
+	  return -1;
+	}
+    }
+  for (i = c * sizeof (x); i < len1; i++)
+    {
+      if (s1[i] != s2[i])
+	return -1;
+    }
+
+  return 0;
+}

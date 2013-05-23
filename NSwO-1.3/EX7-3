@@ -1,0 +1,106 @@
+#define READSIZE 1024
+
+/* Returns 0 on error, file contents on success */
+unsigned char *
+read_file (FILE * f, int *len)
+{
+  unsigned char *buf = NULL, *last = NULL;
+  unsigned char inbuf[READSIZE];
+  int tot, n;
+
+  tot = 0;
+  for (;;)
+    {
+      n = fread (inbuf, sizeof (unsigned char), READSIZE, f);
+      if (n > 0)
+	{
+	  last = buf;
+	  buf = (unsigned char *) malloc (tot + n);
+	  memcpy (buf, last, tot);
+	  memcpy (&buf[tot], inbuf, n);
+	  if (last)
+	    free (last);
+	  tot += n;
+	  if (feof (f) > 0)
+	    {
+	      *len = tot;
+	      return buf;
+	    }
+	}
+      else
+	{
+	  if (buf)
+	    free (buf);
+	  break;
+	}
+    }
+  return NULL;
+}
+
+/* Returns NULL on error, the digest on success */
+unsigned char *
+process_file (FILE * f, insigned int *olen)
+{
+  int filelen;
+  unsigned char *ret, *contents = read_file (f, &filelen);
+  if (!contents)
+    return NULL;
+  ret = simple_digest ("sha1", contents, filelen, olen);
+  free (contents);
+  return ret;
+}
+
+/* Return 0 on failure, 1 on success */
+int
+process_stdin (void)
+{
+  unsigned int olen;
+  unsigned char *digest = process_file (stdin, &olen);
+  if (!digest)
+    return 0;
+  print_hex (digest, olen);
+  printf ("\n");
+  return 1;
+}
+
+/* Returns 0 on failure, 1 on success */
+int
+process_file_by_name (char *fname)
+{
+  FILE *f = fopen (fname, "rb");
+  unsigned int olen;
+  unsigned char *digest;
+  if (!f)
+    {
+      perror (fname);
+      return 0;
+    }
+  digest = process_file (f, &olen);
+  if (!digest)
+    {
+      perror (fname);
+      fclose (f);
+      return 0;
+    }
+  fclose (f);
+  printf ("SHA1(%s)= ", fname);
+  print_hex (digest, olen);
+  printf ("\n");
+  return 1;
+}
+
+int
+main (int argc, char *argv[])
+{
+  int i;
+  if (argc == 1)
+    {
+      if (!process_stdin ())
+	perror ("stdin");
+    }
+  else
+    {
+      for (i = 1; i < argc; i++)
+	process_file_by_name (argv[i]);
+    }
+}

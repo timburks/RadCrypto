@@ -1,0 +1,7 @@
+from M2Crypto import EVP
+
+def hash(data, alg = 'sha1'):
+    md = EVP.MessageDigest(alg)
+    md.update(data)
+    return md.final( )
+

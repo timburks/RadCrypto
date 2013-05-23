@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <string.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+
+#define MAC_KEY_LEN 16
+
+static char bf_key[EVP_MAX_KEY_LENGTH];
+static char iv[EVP_MAX_BLOCK_LENGTH] = { 0, };	/* #define EVP_MAX_BLOCK_LENGTH
+						   * to 64 for OpenSSL 0.9.6c and
+						   * earlier.
+						 */
+
+static char mac_key[MAC_KEY_LEN];
+
+/* A helper function for base64 encoding */
+unsigned char *
+base64_encode (unsigned char *buf, unsigned int len)
+{
+  unsigned char *ret;
+  unsigned int b64_len;
+
+/* the b64data to data ratio is 3 to 4.
+* integer divide by 3 then multiply by 4, add one for NULL terminator.
+*/
+  b64_len = (((len + 2) / 3) * 4) + 1;
+  ret = (unsigned char *) malloc (b64_len);
+  EVP_EncodeBlock (ret, buf, len);
+  ret[b64_len - 1] = 0;
+  return ret;
+}
+
+void
+init_keys (void)
+{
+  RAND_pseudo_bytes (bf_key, EVP_MAX_KEY_LENGTH);
+  RAND_pseudo_bytes (mac_key, MAC_KEY_LEN);
+}
+
+static unsigned char *
+encrypt_input (unsigned char *inp, int *len)
+{
+  EVP_CIPHER_CTX ctx;
+  unsigned char *res = (unsigned char *) malloc (strlen (inp) +
+						 EVP_MAX_BLOCK_LENGTH);
+  unsigned int tlen;
+
+  EVP_EncryptInit (&ctx, EVP_bf_cbc (), bf_key, iv);
+  EVP_EncryptUpdate (&ctx, res, &tlen, inp, strlen (inp));
+  *len = tlen;
+  EVP_EncryptFinal (&ctx, &res[tlen], &tlen);
+  *len += tlen;
+  return res;
+}
+
+static char *fmt = "Set-Cookie: encrypted-history=%s;path=/\r\n"
+  "Set-Cookie: history-mac=%s;path=/\r\n";
+
+char *
+create_cookies (char *hist)
+{
+  unsigned int ctlen;		/* Length of cipher text in binary */
+  unsigned int maclen;		/* Length of HMAC output in binary */
+  unsigned char rawmac[EVP_MAX_MD_SIZE];
+  unsigned char *buf, *ct, b64_hist, *b64_mac;
+
+/* Enough room for everything. */
+  buf = (unsigned char *) malloc (strlen (fmt) + (strlen (hist) * 4) / 3 + 1 +
+				  (EVP_MAX_MD_SIZE * 4) / 3 + 1);
+  ct = encrypt_input (hist, &ctlen);
+  HMAC (EVP_sha1 (), mac_key, MAC_KEY_LEN, hist, strlen (hist), rawmac,
+	&maclen);
+
+  b64_hist = base64_encode (ct, ctlen);
+  b64_mac = base64_encode (rawmac, maclen);
+  sprintf (buf, fmt, b64_hist, b64_mac);
+
+  free (b64_mac);
+  free (b64_hist);
+  return buf;
+}

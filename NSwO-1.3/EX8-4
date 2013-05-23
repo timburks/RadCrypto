@@ -1,0 +1,7 @@
+BIO *bio = BIO_new (BIO_s_memory ());
+RSA *rsa = RSA_generate_key (1024, RSA_F4, NULL, NULL);
+i2d_RSAPrivateKey_bio (bio, rsa);
+
+FILE *fp = fopen ("rsakey.der", "rb");
+RSA *rsa = NULL;
+d2i_RSAPrivateKey_fp (fp, &rsa);

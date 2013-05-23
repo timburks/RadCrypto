@@ -1,0 +1,37 @@
+int
+main (int argc, char *argv[])
+{
+  EVP_CIPHER_CTX ctx;
+  char key[EVP_MAX_KEY_LENGTH];
+  char iv[EVP_MAX_IV_LENGTH];
+  char *ct, *out;
+  char final[EVP_MAX_BLOCK_LENGTH];
+  char str[] = "123456789abcdef";
+  int i;
+
+  if (!seed_prng ())
+    {
+      print ("Fatal Error! Unable to seed the PRNG!\n");
+      abort ();
+    }
+
+  select_random_key (key, EVP_MAX_KEY_LENGTH);
+  select_random_iv (iv, EVP_MAX_IV_LENGTH);
+
+  EVP_EncryptInit (&ctx, EVP_bf_cbc (), key, iv);
+  ct = encrypt_example (&ctx, str, strlen (str), &i);
+  printf ("Ciphertext is %d bytes.\n", i);
+
+  EVP_DecryptInit (&ctx, EVP_bf_cbc (), key, iv);
+  out = decrypt_example (&ctx, ct, 8);
+  printf ("Decrypted: >>%s<<\n", out);
+  out = decrypt_example (&ctx, ct + 8, 8);
+  printf ("Decrypted: >>%s<<\n", out);
+  if (!EVP_DecryptFinal (&ctx, final, &i))
+    {
+      printf ("Padding incorrect.\n");
+      abort ();
+    }
+  final[i] = 0;
+  printf ("Decrypted: >>%s<<\n", final);
+}

@@ -1,0 +1,18 @@
+char *
+decrypt_example (EVP_CIPHER_CTX * ctx, char *ct, int inl)
+{
+/* We're going to null-terminate the plaintext under the assumption it's
+* non-null terminated ASCII text. The null can be ignored otherwise.
+*/
+  char *pt = (char *) malloc (inl + EVP_CIPHER_CTX_block_size (ctx) + 1);
+  int ol;
+
+  EVP_DecryptUpdate (ctx, pt, &ol, ct, inl);
+  if (!ol)			/* there's no block to decrypt */
+    {
+      free (pt);
+      return NULL;
+    }
+  pt[ol] = 0;
+  return pt;
+}

@@ -1,0 +1,37 @@
+/* Warning: DO NOT USE THIS KEY. Generate one randomly. This is for
+* the sake of example only.
+*/
+static const char key[16] = { 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,
+  0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00
+};
+
+/* Returns 0 on failure, 1 on success */
+int
+HMAC_file_and_print (unsigned char *fname)
+{
+  FILE *f = fopen (fname, "rb");
+  unsigned char *contents;
+  unsigned char result[EVP_MAX_MD_SIZE];
+  unsigned int flen, dlen;
+  HMAC_CTX ctx;
+
+  if (!f)
+    return 0;
+  contents = read_file (f, &flen);
+  fclose (f);
+  if (!contents)
+    return 0;
+
+  HMAC_Init (&ctx, key, sizeof (key), EVP_sha1 ());
+  HMAC_Update (&ctx, contents, flen);
+  HMAC_Final (&ctx, result, &dlen);
+  HMAC_cleanup (&ctx);
+
+  printf ("HMAC(%s, ", fname);
+  print_hex (key, sizeof (key));
+  printf (")= ");
+  print_hex (result, dlen);
+  printf ("\n");
+
+  return 1;
+}

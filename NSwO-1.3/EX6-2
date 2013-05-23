@@ -1,0 +1,9 @@
+#include <openssl/evp.h>
+
+void
+setup_for_decryption (char *key, char *iv)
+{
+  EVP_CIPHER_CTX ctx;
+
+  EVP_DecryptInit (&ctx, EVP_bf_cbc (), key, iv);
+}

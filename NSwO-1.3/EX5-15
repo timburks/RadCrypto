@@ -1,0 +1,22 @@
+code = SSL_read(ssl, buf + offset, size - offset);
+switch (SSL_get_error(ssl, code))
+{
+    case SSL_ERROR_NONE:
+        /* update the offset value */
+        offset += code;
+        break;
+    case SSL_ERROR_ZERO_RETURN:
+        /* react to the SSL connection being closed */
+        do_cleanup(ssl);
+        break;
+    case SSL_ERROR_WANT_READ:
+        /* handle this in an application specific way to retry the SSL_read */
+        break;
+    case SSL_ERROR_WANT_WRITE:
+        /* handle this in an application specific way to retry the SSL_read */
+        break;
+    default:
+        /* an error occurred. shutdown the connection */
+        shutdown_connection(ssl);
+}
+

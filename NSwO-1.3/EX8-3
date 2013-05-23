@@ -1,0 +1,8 @@
+RSA *
+DER_decode_RSA_public (unsigned char *buf, long len)
+{
+  RSA *rsa;
+
+  rsa = d2i_RSAPublicKey (NULL, &buf, len);
+  return rsa;
+}

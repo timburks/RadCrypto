@@ -1,0 +1,11 @@
+unsigned char *
+DER_encode_RSA_public (RSA * rsa, int *len)
+{
+  unsigned char *buf, *next;
+
+  *len = i2d_RSAPublicKey (rsa, NULL);
+  buf = next = (unsigned char *) malloc (*len);
+  i2d_RSAPublicKey (rsa, &next);
+
+  return buf;
+}

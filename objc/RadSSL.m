@@ -331,8 +331,7 @@
                      (int) [key_string length]) != [key_string length])
             NSLog(@"error feeding buffer");
         if(PEM_read_bio_RSAPrivateKey(buffer,&rsa,0,NULL)) {
-            //SSL_CTX_use_RSAPrivateKey(ssl_ctx, rsa);
-            NSLog(@"got it");
+
         } else {
             NSLog(@"didn't get it");
         }
@@ -393,8 +392,7 @@
                      (int) [cert_string length]) != [cert_string length])
             NSLog(@"error feeding buffer");
         if(PEM_read_bio_X509(buffer,&cert,0,NULL)) {
-            //  SSL_CTX_use_certificate(ssl_ctx, cert);
-            NSLog(@"got it");
+
         } else {
             NSLog(@"didn't get it");
         }
@@ -663,7 +661,7 @@ if (signedAttributes && [signedAttributes count]) {
         return nil;
     } else {
         NSData *decryptedData = [NSData dataWithBIO:data];
-        NSLog(@"PKCS#7 contains %ld bytes of decrypted data", (unsigned long) [decryptedData length]);
+        // NSLog(@"PKCS#7 contains %ld bytes of decrypted data", (unsigned long) [decryptedData length]);
         return decryptedData;
     }
 }
@@ -860,14 +858,14 @@ X509 *My_PKCS7_cert_from_signer_info(PKCS7 *p7, PKCS7_SIGNER_INFO *si)
     
     /* Copy enveloped data from PKCS#7 */
     NSData *envelopedData = [NSData dataWithBIO:pkcs7bio];
-    NSLog(@"PKCS#7 contains %ld bytes of enveloped data", (unsigned long) [envelopedData length]);
+    // NSLog(@"PKCS#7 contains %ld bytes of enveloped data", (unsigned long) [envelopedData length]);
     
     if (PKCS7_signatureVerify(pkcs7bio, p7, si, signer_cert) <= 0) {
 		NSLog(@"error verifying signature");
 		ERR_print_errors_fp(stderr);
         return nil;
 	} else {
-        NSLog(@"signature verified");
+        // NSLog(@"signature verified");
     }
     
     return envelopedData;

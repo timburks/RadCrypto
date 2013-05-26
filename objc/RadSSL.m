@@ -507,9 +507,9 @@ int add_attribute_octet(STACK_OF(X509_ATTRIBUTE) *attrs, int nid, char *buffer,
     PKCS7_set_type(p7, NID_pkcs7_signed);
     PKCS7_add_certificate(p7, certificate->cert);
     PKCS7_SIGNER_INFO *si = PKCS7_add_signature(p7, certificate->cert, key->pkey, EVP_md5());
-    unsigned long len = [dataToSign length];
-    
+    unsigned long len = [dataToSign length]; 
     /* Set signed attributes */
+if (signedAttributes && [signedAttributes count]) {
     STACK_OF(X509_ATTRIBUTE) *attributes = sk_X509_ATTRIBUTE_new_null();
     id value;
     if ((value = [signedAttributes objectForKey:@"pkiStatus"])) {
@@ -528,13 +528,13 @@ int add_attribute_octet(STACK_OF(X509_ATTRIBUTE) *attrs, int nid, char *buffer,
         add_attribute_octet(attributes, nid_recipientNonce, (char *) [value bytes], (int) [value length]);
     }
     PKCS7_set_signed_attributes(si, attributes);
-    
+    }
+
     /* Add contentType */
     if (!PKCS7_add_signed_attribute(si, NID_pkcs9_contentType,
                                     V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data))) {
         fprintf(stderr, "error adding NID_pkcs9_contentType\n");
     }
-    
     /* Create new content */
     if (!PKCS7_content_new(p7, NID_pkcs7_data)) {
         fprintf(stderr, "failed setting PKCS#7 content type\n");
@@ -556,6 +556,25 @@ int add_attribute_octet(STACK_OF(X509_ATTRIBUTE) *attrs, int nid, char *buffer,
     
     return [[RadPKCS7Message alloc] initWithPKCS7:p7];
 }
+
+
++ (RadPKCS7Message *) signedMessageWithCertificate:(RadX509Certificate *) certificate
+                                        privateKey:(RadEVPPKey *) key
+                                              data:(NSData *) dataToSign
+{
+	BIO *bio = BIO_new(BIO_s_mem());
+    	BIO_reset(bio);
+    	if(BIO_write(bio,
+                 [dataToSign bytes],
+                 (int) [dataToSign length]) != [dataToSign length])
+        	NSLog(@"error feeding buffer");
+
+	STACK_OF(X509) *chain = sk_X509_new_null();
+	PKCS7* p7 = PKCS7_sign(certificate->cert, key->pkey, chain, bio, 0);
+	return [[RadPKCS7Message alloc] initWithPKCS7:p7];
+}
+
+
 
 + (RadPKCS7Message *) degenerateWrapperForCertificate:(RadX509Certificate *) certificate
 {

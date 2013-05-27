@@ -653,10 +653,10 @@ if (signedAttributes && [signedAttributes count]) {
     BIO *data = BIO_new(BIO_s_mem());
     int status = PKCS7_decrypt(p7, key->pkey, certificate->cert, data, PKCS7_BINARY);
     if (!status) {
-        SSL_load_error_strings();
-        unsigned long error = ERR_get_error();
-        char buf[120];
-        NSLog(@"error %ld: %s reason=>%s", error, ERR_error_string(error, buf), ERR_reason_error_string(error));
+        //SSL_load_error_strings();
+        //unsigned long error = ERR_get_error();
+        //char buf[120];
+        // NSLog(@"error %ld: %s reason=>%s", error, ERR_error_string(error, buf), ERR_reason_error_string(error));
         return nil;
     } else {
         NSData *decryptedData = [NSData dataWithBIO:data];
@@ -842,9 +842,16 @@ X509 *My_PKCS7_cert_from_signer_info(PKCS7 *p7, PKCS7_SIGNER_INFO *si)
 		ERR_print_errors_fp(stderr);
         return nil;
     }
-    STACK_OF(PKCS7_SIGNER_INFO)	*sk = PKCS7_get_signer_info(p7);
+
+ STACK_OF(PKCS7_SIGNER_INFO)	*sk = PKCS7_get_signer_info(p7);
     PKCS7_SIGNER_INFO *si = sk_PKCS7_SIGNER_INFO_value(sk, 0);
-    X509 *signer_cert = My_PKCS7_cert_from_signer_info(p7, si);
+
+X509 *signer_cert = NULL;
+if (certificate) {
+	signer_cert = certificate->cert;
+} else {
+    signer_cert = My_PKCS7_cert_from_signer_info(p7, si);
+}
     assert(signer_cert);
     
     /* Create BIO for content data */
@@ -860,8 +867,8 @@ X509 *My_PKCS7_cert_from_signer_info(PKCS7 *p7, PKCS7_SIGNER_INFO *si)
     // NSLog(@"PKCS#7 contains %ld bytes of enveloped data", (unsigned long) [envelopedData length]);
     
     if (PKCS7_signatureVerify(pkcs7bio, p7, si, signer_cert) <= 0) {
-		NSLog(@"error verifying signature");
-		ERR_print_errors_fp(stderr);
+		//NSLog(@"error verifying signature");
+		//ERR_print_errors_fp(stderr);
         return nil;
 	} else {
         // NSLog(@"signature verified");

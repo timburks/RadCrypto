@@ -595,7 +595,7 @@ if (signedAttributes && [signedAttributes count]) {
     for (RadX509Certificate *certificate in certificates) {
         sk_X509_push(certs, certificate->cert);
     }
-    PKCS7 *p7 = PKCS7_encrypt(certs, bio, cipher, 0);
+    PKCS7 *p7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
     return [[RadPKCS7Message alloc] initWithPKCS7:p7];
 }
 
@@ -646,13 +646,12 @@ if (signedAttributes && [signedAttributes count]) {
 - (NSData *) decryptWithKey:(RadEVPPKey *) key
                 certificate:(RadX509Certificate *) certificate
 {
-    if (!PKCS7_type_is_encrypted(p7)) {
-        NSLog(@"pkcs7 is not encrypted");
-    }
+//    if (!PKCS7_type_is_encrypted(self->p7)) {
+//        NSLog(@"pkcs7 is not encrypted");
+//    }
     
     BIO *data = BIO_new(BIO_s_mem());
-    int status = PKCS7_decrypt(p7, key->pkey, certificate->cert, data, 0);
-    NSLog(@"decrypt status %d", status);
+    int status = PKCS7_decrypt(p7, key->pkey, certificate->cert, data, PKCS7_BINARY);
     if (!status) {
         SSL_load_error_strings();
         unsigned long error = ERR_get_error();

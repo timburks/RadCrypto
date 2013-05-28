@@ -331,7 +331,7 @@
                      (int) [key_string length]) != [key_string length])
             NSLog(@"error feeding buffer");
         if(PEM_read_bio_RSAPrivateKey(buffer,&rsa,0,NULL)) {
-
+            
         } else {
             NSLog(@"didn't get it");
         }
@@ -392,7 +392,7 @@
                      (int) [cert_string length]) != [cert_string length])
             NSLog(@"error feeding buffer");
         if(PEM_read_bio_X509(buffer,&cert,0,NULL)) {
-
+            
         } else {
             NSLog(@"didn't get it");
         }
@@ -450,7 +450,6 @@ int nid_extensionReq;
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
     ERR_load_crypto_strings (); // redundant?
-    
     nid_messageType    = OBJ_create("2.16.840.1.113733.1.9.2", "messageType", "messageType");
     nid_pkiStatus      = OBJ_create("2.16.840.1.113733.1.9.3", "pkiStatus", "pkiStatus");
     nid_failInfo       = OBJ_create("2.16.840.1.113733.1.9.4", "failInfo", "failInfo");
@@ -494,64 +493,64 @@ int add_attribute_octet(STACK_OF(X509_ATTRIBUTE) *attrs, int nid, char *buffer,
                                               data:(NSData *) dataToSign
                                   signedAttributes:(NSDictionary *) signedAttributes
 {
-    BIO *bio = BIO_new(BIO_s_mem());
-    BIO_reset(bio);
-    if(BIO_write(bio,
-                 [dataToSign bytes],
-                 (int) [dataToSign length]) != [dataToSign length])
-        NSLog(@"error feeding buffer");
-    
+    EVP_add_digest(EVP_md5());
+	
     PKCS7 *p7 = PKCS7_new();
     PKCS7_set_type(p7, NID_pkcs7_signed);
     PKCS7_add_certificate(p7, certificate->cert);
+    
     PKCS7_SIGNER_INFO *si = PKCS7_add_signature(p7, certificate->cert, key->pkey, EVP_md5());
-    unsigned long len = [dataToSign length]; 
-    /* Set signed attributes */
-if (signedAttributes && [signedAttributes count]) {
-    STACK_OF(X509_ATTRIBUTE) *attributes = sk_X509_ATTRIBUTE_new_null();
-    id value;
-    if ((value = [signedAttributes objectForKey:@"pkiStatus"])) {
-        add_attribute_string(attributes, nid_pkiStatus, (char *) [value cStringUsingEncoding:NSUTF8StringEncoding]);
-    }
-    if ((value = [signedAttributes objectForKey:@"transactionID"])) {
-        add_attribute_string(attributes, nid_transId, (char *) [value cStringUsingEncoding:NSUTF8StringEncoding]);
-    }
-    if ((value = [signedAttributes objectForKey:@"messageType"])) {
-        add_attribute_string(attributes, nid_messageType, (char *) [value cStringUsingEncoding:NSUTF8StringEncoding]);
-    }
-    if ((value = [signedAttributes objectForKey:@"senderNonce"])) {
-        add_attribute_octet(attributes, nid_senderNonce, (char *) [value bytes], (int) [value length]);
-    }
-    if ((value = [signedAttributes objectForKey:@"recipientNonce"])) {
-        add_attribute_octet(attributes, nid_recipientNonce, (char *) [value bytes], (int) [value length]);
-    }
-    PKCS7_set_signed_attributes(si, attributes);
-    }
 
-    /* Add contentType */
+    // Set signed attributes 
+    if (signedAttributes && [signedAttributes count]) {
+        STACK_OF(X509_ATTRIBUTE) *attributes = sk_X509_ATTRIBUTE_new_null();
+        id value;
+        if ((value = [signedAttributes objectForKey:@"pkiStatus"])) {
+            add_attribute_string(attributes, nid_pkiStatus, (char *) [value cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
+        if ((value = [signedAttributes objectForKey:@"transactionID"])) {
+            add_attribute_string(attributes, nid_transId, (char *) [value cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
+        if ((value = [signedAttributes objectForKey:@"messageType"])) {
+            add_attribute_string(attributes, nid_messageType, (char *) [value cStringUsingEncoding:NSUTF8StringEncoding]);
+        }
+        if ((value = [signedAttributes objectForKey:@"senderNonce"])) {
+            add_attribute_octet(attributes, nid_senderNonce, (char *) [value bytes], (int) [value length]);
+        }
+        if ((value = [signedAttributes objectForKey:@"recipientNonce"])) {
+            add_attribute_octet(attributes, nid_recipientNonce, (char *) [value bytes], (int) [value length]);
+        }
+        PKCS7_set_signed_attributes(si, attributes);
+    }
+    
+    // Add contentType
     if (!PKCS7_add_signed_attribute(si, NID_pkcs9_contentType,
                                     V_ASN1_OBJECT, OBJ_nid2obj(NID_pkcs7_data))) {
         fprintf(stderr, "error adding NID_pkcs9_contentType\n");
     }
-    /* Create new content */
+    
+    // Create new content
     if (!PKCS7_content_new(p7, NID_pkcs7_data)) {
         fprintf(stderr, "failed setting PKCS#7 content type\n");
     }
     
-    /* Write data  */
+    // Write data
+    unsigned long len = [dataToSign length];
     BIO *pkcs7bio = PKCS7_dataInit(p7, NULL);
     if (pkcs7bio == NULL) {
         fprintf(stderr, "error opening bio for writing PKCS#7 data\n");
     }
-    if (len != (unsigned long) BIO_write(pkcs7bio, bio, (int) len)) {
+    if (len != (unsigned long) BIO_write(pkcs7bio, [dataToSign bytes], [dataToSign length])) {
         fprintf(stderr, "error writing PKCS#7 data\n");
     }
+    BIO_flush(pkcs7bio);
     
-    /* Finalize PKCS#7  */
+    // Finalize PKCS#7 
     if (!PKCS7_dataFinal(p7, pkcs7bio)) {
         fprintf(stderr, "error finalizing outer PKCS#7\n");
     }
-    
+    BIO_free(pkcs7bio);
+
     return [[RadPKCS7Message alloc] initWithPKCS7:p7];
 }
 
@@ -560,16 +559,16 @@ if (signedAttributes && [signedAttributes count]) {
                                         privateKey:(RadEVPPKey *) key
                                               data:(NSData *) dataToSign
 {
-	BIO *bio = BIO_new(BIO_s_mem());
-    	BIO_reset(bio);
-    	if(BIO_write(bio,
+    BIO *bio = BIO_new(BIO_s_mem());
+    BIO_reset(bio);
+    if(BIO_write(bio,
                  [dataToSign bytes],
                  (int) [dataToSign length]) != [dataToSign length])
-        	NSLog(@"error feeding buffer");
-
-	STACK_OF(X509) *chain = sk_X509_new_null();
-	PKCS7* p7 = PKCS7_sign(certificate->cert, key->pkey, chain, bio, 0);
-	return [[RadPKCS7Message alloc] initWithPKCS7:p7];
+        NSLog(@"error feeding buffer");
+    
+    STACK_OF(X509) *chain = sk_X509_new_null();
+    PKCS7* p7 = PKCS7_sign(certificate->cert, key->pkey, chain, bio, 0);
+    return [[RadPKCS7Message alloc] initWithPKCS7:p7];
 }
 
 
@@ -646,9 +645,9 @@ if (signedAttributes && [signedAttributes count]) {
 - (NSData *) decryptWithKey:(RadEVPPKey *) key
                 certificate:(RadX509Certificate *) certificate
 {
-//    if (!PKCS7_type_is_encrypted(self->p7)) {
-//        NSLog(@"pkcs7 is not encrypted");
-//    }
+    //    if (!PKCS7_type_is_encrypted(self->p7)) {
+    //        NSLog(@"pkcs7 is not encrypted");
+    //    }
     
     BIO *data = BIO_new(BIO_s_mem());
     int status = PKCS7_decrypt(p7, key->pkey, certificate->cert, data, PKCS7_BINARY);
@@ -669,7 +668,7 @@ int get_attribute(STACK_OF(X509_ATTRIBUTE) *attribs, int required_nid, ASN1_TYPE
     int             i;
     ASN1_OBJECT     *asn1_obj = NULL;
     X509_ATTRIBUTE  *x509_attrib = NULL;
-    int v_flag = 1;
+    int v_flag = 0;
     if (v_flag)
         NSLog(@"finding attribute %s\n",
               OBJ_nid2sn(required_nid));
@@ -703,7 +702,7 @@ int get_signed_attribute(STACK_OF(X509_ATTRIBUTE) *attribs, int nid, int type, c
     int             rc;
     ASN1_TYPE       *asn1_type;
     unsigned int    len;
-    int v_flag = 1;
+    int v_flag = 0;
     /* Find attribute */
     rc = get_attribute(attribs, nid, &asn1_type);
     if (rc == 1) {
@@ -826,7 +825,6 @@ X509 *My_PKCS7_cert_from_signer_info(PKCS7 *p7, PKCS7_SIGNER_INFO *si)
                               V_ASN1_PRINTABLESTRING, &p)) == 1) {
         NSLog(@"cannot find nid_pkiStatus");
     } else {
-        NSLog(@"nid_pkiStatus: %s", p);
         [attributeDictionary setObject:[NSString stringWithCString:p encoding:NSUTF8StringEncoding]
                                 forKey:@"pkiStatus"];
     }
@@ -842,16 +840,16 @@ X509 *My_PKCS7_cert_from_signer_info(PKCS7 *p7, PKCS7_SIGNER_INFO *si)
 		ERR_print_errors_fp(stderr);
         return nil;
     }
-
- STACK_OF(PKCS7_SIGNER_INFO)	*sk = PKCS7_get_signer_info(p7);
+    
+    STACK_OF(PKCS7_SIGNER_INFO)	*sk = PKCS7_get_signer_info(p7);
     PKCS7_SIGNER_INFO *si = sk_PKCS7_SIGNER_INFO_value(sk, 0);
-
-X509 *signer_cert = NULL;
-if (certificate) {
-	signer_cert = certificate->cert;
-} else {
-    signer_cert = My_PKCS7_cert_from_signer_info(p7, si);
-}
+    
+    X509 *signer_cert = NULL;
+    if (certificate) {
+        signer_cert = certificate->cert;
+    } else {
+        signer_cert = My_PKCS7_cert_from_signer_info(p7, si);
+    }
     assert(signer_cert);
     
     /* Create BIO for content data */

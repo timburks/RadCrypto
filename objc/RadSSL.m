@@ -418,6 +418,17 @@
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
+- (NSString *) issuer
+{
+    X509_NAME *name = X509_get_issuer_name(cert);
+    BIO *bio = BIO_new(BIO_s_mem());
+    X509_NAME_print(bio, name, 0);
+    
+    NSData *data = [NSData dataWithBIO:bio];
+    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+}
+
+
 - (NSData *) dataRepresentation
 {
     BIO *bio = BIO_new(BIO_s_mem());
